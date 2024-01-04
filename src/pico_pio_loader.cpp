@@ -1,6 +1,9 @@
 #include "pico_pio_loader/pico_pio_loader.h"
 
 #include "hardware/pio.h"
+#include "pico/sync.h"
+
+#include "pico_pio_loader/mutex_guard.h"
 
 namespace {
 
@@ -11,6 +14,8 @@ struct AddedProgram {
   uint offset;
 };
 
+auto_init_mutex(added_programs_mutex);
+
 AddedProgram pio0_added_programs[MAX_PROGRAMS_PER_PIO];
 int pio0_added_program_count = 0;
 AddedProgram pio1_added_programs[MAX_PROGRAMS_PER_PIO];
@@ -19,6 +24,8 @@ int pio1_added_program_count = 0;
 } // namespace
 
 bool pio_loader_add_or_get_offset(PIO pio, const pio_program_t* program, uint* offset) {
+  MutexGuard guard(&added_programs_mutex);
+
   AddedProgram* added_programs;
   int* added_program_count;
   if (pio == pio0) {
